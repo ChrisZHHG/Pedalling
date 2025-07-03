@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chris Zhang - Life Journey</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .map-container {
+            position: relative;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            transform: scale(0.8);
+            transform-origin: center;
+            transition: transform 0.5s ease;
+        }
+
+        .journey-path {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .path-line {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.3);
+            stroke-width: 4;
+            stroke-dasharray: 15, 8;
+            animation: pathFlow 30s linear infinite;
+        }
+
+        @keyframes pathFlow {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 460; }
+        }
+
+        .station {
+            position: absolute;
+            width: 85px;
+            height: 85px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .station:hover {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+        }
+
+        .station.active {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            transform: scale(1.25) rotate(10deg);
+            animation: stationPulse 2s infinite;
+        }
+
+        @keyframes stationPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+            50% { box-shadow: 0 0 0 20px rgba(255, 107, 107, 0); }
+        }
+
+        .station-icon {
+            font-size: 26px;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .station.active .station-icon {
+            color: white;
+            animation: iconBounce 1s infinite;
+        }
+
+        @keyframes iconBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .bike {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            font-size: 40px;
+            z-index: 20;
+            transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            animation: bikeBounce 2s infinite;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes bikeBounce {
+            0%, 100% { 
+                transform: translateY(0) rotate(0deg); 
+            }
+            25% { 
+                transform: translateY(-8px) rotate(-3deg); 
+            }
+            75% { 
+                transform: translateY(-4px) rotate(3deg); 
+            }
+        }
+
+        .bike.riding {
+            animation: bikeRiding 1.5s ease-in-out;
+        }
+
+        @keyframes bikeRiding {
+            0% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-12px) rotate(-5deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+            75% { transform: translateY(-10px) rotate(-2deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        .timeline {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50px;
+            padding: 18px 35px;
+            display: flex;
+            gap: 22px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            z-index: 30;
+        }
+
+        .timeline-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .timeline-dot:hover {
+            background: #ff6b6b;
+            transform: scale(1.3);
+            box-shadow: 0 0 0 8px rgba(255, 107, 107, 0.2);
+        }
+
+        .timeline-dot.active {
+            background: #ff6b6b;
+            transform: scale(1.4);
+            animation: timelinePulse 2s infinite;
+        }
+
+        @keyframes timelinePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); }
+        }
+
+        .timeline-dot::after {
+            content: attr(data-year);
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #666;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .content-panel {
+            position: absolute;
+            right: -420px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 400px;
+            max-height: 80vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(15px);
+            transition: right 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 40;
+            overflow-y: auto;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .content-panel.active {
+            right: 30px;
+            animation: panelSlideIn 0.6s ease-out;
+        }
+
+        @keyframes panelSlideIn {
+            0% { transform: translateY(-50%) translateX(50px); opacity: 0; }
+            100% { transform: translateY(-50%) translateX(0); opacity: 1; }
+        }
+
+        .content-panel h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .content-panel h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .content-panel p {
+            color: #555;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            margin-top: 22px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .thoughts-section {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .thoughts-section h4 {
+            color: #0369a1;
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .thoughts-section p {
+            color: #0c4a6e;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .project-item {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .project-item:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .interests {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .interest-tag {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .interest-tag:hover {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.3s ease;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #333;
+            background: rgba(0, 0, 0, 0.1);
+            transform: rotate(90deg);
+        }
+
+        .nav-controls {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 30;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-size: 18px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            z-index: 30;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+            50% { text-shadow: 2px 2px 20px rgba(255, 255, 255, 0.3); }
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .weather-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            animation: cloudFloat 20s infinite linear;
+        }
+
+        .cloud:nth-child(1) {
+            width: 100px;
+            height: 40px;
+            top: 10%;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .cloud:nth-child(2) {
+            width: 80px;
+            height: 30px;
+            top: 20%;
+            left: -80px;
+            animation-delay: 5s;
+        }
+
+        .cloud:nth-child(3) {
+            width: 120px;
+            height: 50px;
+            top: 15%;
+            left: -120px;
+            animation-delay: 10s;
+        }
+
+        @keyframes cloudFloat {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content-panel {
+                width: 90%;
+                right: -100%;
+            }
+            
+            .content-panel.active {
+                right: 5%;
+            }
+            
+            .header h1 {
+                font-size: 2.2em;
+            }
+            
+            .station {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .station-icon {
+                font-size: 22px;
+            }
+        }
+
+        /* Scrollbar */
+        .content-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content-panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        .content-panel::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 3px;
+        }
+
+        .content-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="weather-effect">
+            <div class="cloud"></div>
+            <div class="cloud"></div>
+            <div class="cloud"></div>
+        </div>
+
+        <div class="header">
+            <h1>Chris Zhang</h1>
+            <p>Cycling Through Life's Journey</p>
+        </div>
+
+        <div class="nav-controls">
+            <button class="nav-btn" onclick="zoomIn()">🔍</button>
+            <button class="nav-btn" onclick="zoomOut()">🔍</button>
+            <button class="nav-btn" onclick="resetView()">🏠</button>
+        </div>
+
+        <div class="map-container" id="mapContainer">
+            <svg class="journey-path" viewBox="0 0 1200 800">
+                <path class="path-line" d="M 150 400 Q 300 200 450 300 Q 600 400 750 250 Q 900 100 1050 200 Q 1100 300 950 450 Q 800 600 650 500 Q 500 400 350 550 Q 200 600 150 400" />
+            </svg>
+
+            <!-- Life Journey Stations -->
+            <div class="station" style="left: 130px; top: 380px;" data-station="awakening" onclick="showStation('awakening')">
+                <div class="station-icon">💡</div>
+            </div>
+            
+            <div class="station" style="left: 280px; top: 180px;" data-station="numbers" onclick="showStation('numbers')">
+                <div class="station-icon">📊</div>
+            </div>
+            
+            <div class="station" style="left: 450px; top: 280px;" data-station="questions" onclick="showStation('questions')">
+                <div class="station-icon">❓</div>
+            </div>
+            
+            <div class="station" style="left: 720px; top: 230px;" data-station="courage" onclick="showStation('courage')">
+                <div class="station-icon">🦋</div>
+            </div>
+            
+            <div class="station" style="left: 1020px; top: 180px;" data-station="learning" onclick="showStation('learning')">
+                <div class="station-icon">🧠</div>
+            </div>
+            
+            <div class="station" style="left: 920px; top: 430px;" data-station="creating" onclick="showStation('creating')">
+                <div class="station-icon">🚀</div>
+            </div>
+            
+            <div class="station" style="left: 620px; top: 480px;" data-station="exploring" onclick="showStation('exploring')">
+                <div class="station-icon">🌟</div>
+            </div>
+
+            <!-- Bike -->
+            <div class="bike" id="bike" style="left: 105px; top: 355px;">🚲</div>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-dot" data-year="2013" data-station="awakening"></div>
+            <div class="timeline-dot" data-year="2017" data-station="numbers"></div>
+            <div class="timeline-dot" data-year="2020" data-station="questions"></div>
+            <div class="timeline-dot" data-year="2023" data-station="courage"></div>
+            <div class="timeline-dot" data-year="2024" data-station="learning"></div>
+            <div class="timeline-dot" data-year="2025" data-station="creating"></div>
+            <div class="timeline-dot" data-year="Future" data-station="exploring"></div>
+        </div>
+
+        <div class="content-panel" id="contentPanel">
+            <button class="close-btn" onclick="closePanel()">×</button>
+            <div id="panelContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const stationData = {
+            awakening: {
+                title: "The Awakening",
+                period: "2013 - Early Professional Life",
+                description: "Starting at Deloitte, I thought I had life figured out. The corporate world welcomed me with open arms, and I was ready to climb the ladder.",
+                thoughts: [
+                    "Why does everyone seem to know exactly what they're doing?",
+                    "Is this what success looks like?",
+                    "I'm good at finding problems in numbers, but what about finding meaning?"
+                ],
+                projects: ["First major audit discoveries", "Learning to navigate corporate politics", "Building professional relationships"],
+                interests: ["Financial analysis", "Problem-solving", "Understanding business operations"],
+                reflection: "Those early years taught me that being good at something doesn't automatically make it fulfilling. I was excellent at auditing, but I kept wondering if there was more to professional life than just being competent."
+            },
+            numbers: {
+                title: "Living in Numbers",
+                period: "2017 - Peak Auditing Years",
+                description: "I became really good at what I did. Finding that billion-dollar discrepancy felt like solving a puzzle, but I started questioning if I was just really good at a very specific type of thinking.",
+                thoughts: [
+                    "What if my skills could be applied to something more... dynamic?",
+                    "Every audit follows the same pattern. What happens when the pattern changes?",
+                    "I love the detective work, but financial statements are just one type of mystery."
+                ],
+                projects: ["Major acquisition audits", "Risk assessment frameworks", "Cross-border compliance projects"],
+                interests: ["Pattern recognition", "Risk analysis", "Understanding complex systems"],
+                reflection: "Success in auditing gave me confidence, but it also made me realize that I was drawn to the investigative aspect more than the accounting. I started wondering what other types of 'mysteries' I could solve."
+            },
+            questions: {
+                title: "The Great Questioning",
+                period: "2020 - Internal Shifts",
+                description: "Working at Vanke, I started seeing technology everywhere. Every process, every risk, every solution had a digital component. I began asking: what if I understood the technology behind the business?",
+                thoughts: [
+                    "Why am I auditing systems I don't really understand?",
+                    "What if the biggest risks aren't in the books, but in the code?",
+                    "Am I limiting myself by staying in this lane?"
+                ],
+                projects: ["Process optimization projects", "Technology risk assessments", "Digital transformation reviews"],
+                interests: ["Technology systems", "Digital security", "Modern business operations"],
+                reflection: "This was my turning point. I realized that the future of business risk was increasingly technological, and I was evaluating systems I didn't deeply understand. It felt like being a detective who could only examine one type of evidence."
+            },
+            courage: {
+                title: "The Leap of Faith",
+                period: "2023 - Decision Time",
+                description: "The moment I decided to completely change careers. It wasn't just about learning new skills; it was about admitting that I needed to start over in some ways.",
+                thoughts: [
+                    "What if I'm too old to start over?",
+                    "Can I really transfer my skills to a completely different field?",
+                    "What if I'm giving up a secure career for something uncertain?"
+                ],
+                projects: ["Career research and planning", "Initial self-study in programming", "Networking in cybersecurity"],
+                interests: ["Career transition", "Self-directed learning", "Building new professional networks"],
+                reflection: "This period taught me that courage isn't the absence of fear—it's acting despite the fear. I had to be okay with being a beginner again, which was humbling but also exciting."
+            },
+            learning: {
+                title: "Back to School",
+                period: "2024 - Student Life Again",
+                description: "Returning to university in my 30s was surreal. Sitting in algorithms class, I'm surrounded by people half my age, but I bring something they don't: context.",
+                thoughts: [
+                    "How do I balance being a student with being a professional?",
+                    "What can I learn from people who grew up with technology?",
+                    "How do I apply my business experience to technical problems?"
+                ],
+                projects: ["CS coursework and projects", "Career peer advising", "Bridging business and technical knowledge"],
+                interests: ["Algorithms and data structures", "Cybersecurity principles", "Mentoring and teaching"],
+                reflection: "Being a student again reminded me why I love learning. Every concept in computer science connects to something I've experienced in business. It's like learning a new language to describe things I already intuited."
+            },
+            creating: {
+                title: "Building Things",
+                period: "2025 - Hands-On Projects",
+                description: "Finally, I'm not just analyzing systems—I'm building them. Contributing to Ghostery, leading hackathon teams, writing code that people actually use.",
+                thoughts: [
+                    "How does it feel to create rather than just evaluate?",
+                    "What problems can I solve that others might not see?",
+                    "How do I combine my business insight with technical skills?"
+                ],
+                projects: ["Ghostery browser extension", "Climate resilience dashboard", "Open-source contributions"],
+                interests: ["Privacy and security", "Data visualization", "Community-driven development"],
+                reflection: "There's something deeply satisfying about building solutions rather than just identifying problems. Each project teaches me something new about the intersection of technology and human needs."
+            },
+            exploring: {
+                title: "The Road Ahead",
+                period: "Future - Uncharted Territory",
+                description: "I'm not sure exactly where this journey leads, but I know I'm combining unique perspectives: business acumen, risk thinking, and technical skills.",
+                thoughts: [
+                    "What problems exist at the intersection of business and cybersecurity?",
+                    "How can I help organizations make better decisions about technology risk?",
+                    "What will the next chapter look like?"
+                ],
+                projects: ["Advanced cybersecurity research", "Business-focused security solutions", "Thought leadership in tech transition"],
+                interests: ["Emerging technologies", "Business-technology integration", "Career mentorship"],
+                reflection: "The future is uncertain, but that's what makes it exciting. I've learned that career pivots aren't just about changing jobs—they're about expanding your perspective on what's possible."
+            }
+        };
+
+        let currentZoom = 0.8;
+        let currentStation = '';
+
+        function showStation(stationId) {
+            const station = document.querySelector(`[data-station="${stationId}"]`);
+            const bike = document.getElementById('bike');
+            const panel = document.getElementById('contentPanel');
+            const content = document.getElementById('panelContent');
+            
+            // Remove active classes
+            document.querySelectorAll('.station').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.timeline-dot').forEach(d => d.classList.remove('active'));
+            
+            // Add active classes
+            station.classList.add('active');
+            const timelineDot = document.querySelector(`[data-station="${stationId}"].timeline-dot`);
+            if (timelineDot) timelineDot.classList.add('active');
+            
+            // Add riding animation to bike
+            bike.classList.add('riding');
+            
+            // Move bike to station
+            bike.style.left = (parseInt(station.style.left) - 25) + 'px';
+            bike.style.top = (parseInt(station.style.top) - 25) + 'px';
+            
+            // Remove riding animation after movement
+            setTimeout(() => {
+                bike.classList.remove('riding');
+            }, 1500);
+            
+            // Show content panel
+            const data = stationData[stationId];
+            content.innerHTML = `
+                <h2>${data.title}</h2>
+                <h3>${data.period}</h3>
+                <p>${data.description}</p>
+                
+                <div class="thoughts-section">
+                    <h4>💭 Inner Thoughts & Questions</h4>
+                    ${data.thoughts.map(thought => `<p>"${thought}"</p>`).join('')}
+                </div>
+                
+                <div class="section-title">🚀 What I Was Working On</div>
+                <div class="project-grid">
+                    ${data.projects.map(project => `<div class="project-item">${project}</div>`).join('')}
+                </div>
+                
+                <div class="section-title">🎯 What Caught My Interest</div>
+                <div class="interests">
+                    ${data.interests.map(interest => `<span class="interest-tag">${interest}</span>`).join('')}
+                </div>
+                
+                <div class="section-title">🌱 Looking Back</div>
+                <p>${data.reflection}</p>
+            `;
+            
+            panel.classList.add('active');
+            currentStation = stationId;
+        }
+
+        function closePanel() {
+            document.getElementById('contentPanel').classList.remove('active');
+            document.querySelectorAll('.station').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.timeline-dot').forEach(d => d.classList.remove('active'));
+            currentStation = '';
+        }
+
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom + 0.1, 1.2);
+            document.getElementById('mapContainer').style.transform = `scale(${currentZoom})`;
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom - 0.1, 0.5);
+            document.getElementById('mapContainer').style.transform = `scale(${currentZoom})`;
+        }
+
+        function resetView() {
+            currentZoom = 0.8;
+            document.getElementById('mapContainer').style.transform = `scale(${currentZoom})`;
+            closePanel();
+        }
+
+        // Timeline click events
+        document.querySelectorAll('.timeline-dot').forEach(dot => {
+            dot.addEventListener('click', function() {
+                const stationId = this.getAttribute('data-station');
+                showStation(stationId);
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePanel();
+            }
+        });
+
+        // Auto-show first station after page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                showStation('awakening');
+            }, 1200);
+        });
+    </script>
+</body>
+</html>
